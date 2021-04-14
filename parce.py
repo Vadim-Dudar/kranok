@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup as bs
 import sys
+from itertools import groupby
 
 
 class Parce():
@@ -47,19 +48,41 @@ class Parce():
     def get_content(self, html):
 
         soup = bs(html, 'html.parser')
-        feature = soup.find_all('ul')
+        content = []
+
+        for name in soup.find_all('div', class_='product-title'):
+            content.append(name.find('h1').get_text())
+
+        price = []
+        for p in soup.find_all('div', class_='pr-q'):
+            if p.find('span', class_='price') != None:
+                price.append(p.find('span', class_='price').get_text().replace('\n', '').replace('\xa0', ' '))
+            else:
+                price.append(p.find('div', class_='b-price').get_text().replace('\n', '').replace('\xa0', ' '))
+
+        content.append(price)
 
         spans = []
-        for i in feature[2:4]:
+        for i in soup.find_all('ul')[2:4]:
             for li in i.find_all('li'):
                 d = []
                 for span in li.find_all('span'):
                     d.append(span.get_text())
-                    # spans.append(span.get_text())
                 spans.append(d)
 
-        print(spans)
-        return spans
+        content.append(spans)
+
+        return content
+
+    def do_fnames(self, data):
+        # fnames - field names 
+        fnames = []
+        for i in data[-1]:
+            fnames.append(i[0])
+
+        fnames = [el for el, _ in groupby(fnames)]
+
+        print(data)
 
     def csv(self, data):
         pass
@@ -72,11 +95,16 @@ class Parce():
             for page in range(1, counter+1):
                 html = self.html(self.url, params={'page': page})
                 urls = self.get_urls(html.text)
+
                 for url in urls:
                     print(url)
-                    html = self.html(url)
-                    self.get_content(html.text)
-                    # sys.stdout.write(f'\rWait, {page}/{counter}')       
+                    self.csv(self.get_content(self.html(url).text))   
+                
+                if input('enter something to stop: '):
+                    continue
+                else:
+                    print('stop')
+                    break
         else:
             print('Something wrong!')
 
