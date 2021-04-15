@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup as bs
 import sys
+import csv
 import time
 from threading import Thread
 from itertools import groupby
@@ -84,34 +85,26 @@ class Parce():
         spans = []
         for i in soup.find_all('ul')[2:4]:
             for li in i.find_all('li'):
-                d = []
-                for span in li.find_all('span'):
-                    d.append(span.get_text())
-                spans.append(d)
+                span = li.find_all('span')
+                b = f'{span[0].get_text()}: {span[1].get_text()}'
+                spans.append(b)
 
         content.append(spans)
 
         return content
 
-    def do_fnames(self, data):
-        # fnames - field names 
-        fnames = []
-        for i in data[-1]:
-            fnames.append(i[0])
+    def csv(self, data):
 
-        fnames = [el for el, _ in groupby(fnames)]
-
-        return fnames
-
-    def csv(self, data, fnames=None):
-        pass
+        with open('sample.csv', 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            for info in data:
+                writer.writerow(info)
 
     def parce(self):
 
         html = self.html(self.url)
         if html.status_code == 200:
             counter = self.get_pages_count(html.text)
-            fnames = []
 
             for page in range(1, counter+1):
                 html = self.html(self.url, params={'page': page})
@@ -120,8 +113,8 @@ class Parce():
                 for url in urls:
                     print(url)
                     html = self.html(url).text
-                    fnames = self.do_fnames(self.get_content(html))   
-                    print(fnames)
+                    content = self.get_content(html)
+                    self.csv(content)
 
                 inp = Inp().get() 
                 if inp != None:
