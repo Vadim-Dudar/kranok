@@ -1,7 +1,26 @@
 import requests
 from bs4 import BeautifulSoup as bs
 import sys
+import time
+from threading import Thread
 from itertools import groupby
+
+
+class Inp():
+
+    inp = None
+
+    def __init__(self):
+        t = Thread(target=self.get_input)
+        t.daemon = True
+        t.start()
+        t.join(timeout=5)
+
+    def get_input(self):
+        self.inp = input('Enter something and press Enter to stop: ')
+
+    def get(self):
+        return self.inp
 
 
 class Parce():
@@ -82,9 +101,9 @@ class Parce():
 
         fnames = [el for el, _ in groupby(fnames)]
 
-        print(data)
+        return fnames
 
-    def csv(self, data):
+    def csv(self, data, fnames=None):
         pass
 
     def parce(self):
@@ -92,19 +111,25 @@ class Parce():
         html = self.html(self.url)
         if html.status_code == 200:
             counter = self.get_pages_count(html.text)
+            fnames = []
+
             for page in range(1, counter+1):
                 html = self.html(self.url, params={'page': page})
                 urls = self.get_urls(html.text)
-
+            
                 for url in urls:
                     print(url)
-                    self.csv(self.get_content(self.html(url).text))   
-                
-                if input('enter something to stop: '):
-                    continue
-                else:
-                    print('stop')
+                    html = self.html(url).text
+                    fnames = self.do_fnames(self.get_content(html))   
+                    print(fnames)
+
+                inp = Inp().get() 
+                if inp != None:
+                    print('break')
                     break
+                else:
+                    print('continue')
+                print('new page')
         else:
             print('Something wrong!')
 
