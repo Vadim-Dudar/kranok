@@ -4,24 +4,6 @@ import sys
 import csv
 import time
 from threading import Thread
-from itertools import groupby
-
-
-class Inp():
-
-    inp = None
-
-    def __init__(self):
-        t = Thread(target=self.get_input)
-        t.daemon = True
-        t.start()
-        t.join(timeout=5)
-
-    def get_input(self):
-        self.inp = input('Enter something and press Enter to stop: ')
-
-    def get(self):
-        return self.inp
 
 
 class Parce():
@@ -35,6 +17,8 @@ class Parce():
 
         self.url = url
         self.params = params
+        # self.csvfile = open('sample.csv', 'w', newline='')
+        # self.writer = csv.writer(self.csvfile)
 
     def html(self, url, params=None, headers=headers):
 
@@ -42,6 +26,7 @@ class Parce():
         return r
 
     def get_pages_count(self, html):
+
         soup = bs(html, 'html.parser')
         pages_link = soup.find('a', class_='last').get('href')
         
@@ -65,7 +50,7 @@ class Parce():
 
         return urls
 
-    def get_content(self, html):
+    def get_content(self, html, url):
 
         soup = bs(html, 'html.parser')
         content = []
@@ -73,32 +58,37 @@ class Parce():
         for name in soup.find_all('div', class_='product-title'):
             content.append(name.find('h1').get_text())
 
-        price = []
         for p in soup.find_all('div', class_='pr-q'):
             if p.find('span', class_='price') != None:
-                price.append(p.find('span', class_='price').get_text().replace('\n', '').replace('\xa0', ' '))
+                content.append(p.find('span', class_='price').get_text().replace('\n', '').replace('\xa0', ' '))
             else:
-                price.append(p.find('div', class_='b-price').get_text().replace('\n', '').replace('\xa0', ' '))
+                bprice = p.find('div', class_='b-price').get_text().replace('\n', '').replace('\xa0', ' ')
+                aprice = p.find('div', class_='price-old').get_text().replace('\n', '').replace('\xa0', ' ')
+                content.append(f'{bprice}, {aprice}')
 
-        content.append(price)
 
-        spans = []
         for i in soup.find_all('ul')[2:4]:
             for li in i.find_all('li'):
                 span = li.find_all('span')
-                b = f'{span[0].get_text()}: {span[1].get_text()}'
-                spans.append(b)
+                content.append(f'{span[0].get_text()}: {span[1].get_text()}')
 
-        content.append(spans)
+        imgstr = ''
+        for img in soup.find_all('div', class_='viewport'):
+            for i in img.find_all('a'):
+                imgstr += i.get('href') + ', ' 
+            print(imgstr)
 
+        content.append(imgstr)
+
+        content.insert(0, url)
         return content
 
     def csv(self, data):
 
         with open('sample.csv', 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            for info in data:
-                writer.writerow(info)
+            writer.writerow(i for i in data)
+            print('new page')
 
     def parce(self):
 
@@ -109,20 +99,12 @@ class Parce():
             for page in range(1, counter+1):
                 html = self.html(self.url, params={'page': page})
                 urls = self.get_urls(html.text)
-            
+                    
                 for url in urls:
                     print(url)
                     html = self.html(url).text
-                    content = self.get_content(html)
-                    self.csv(content)
+                    self.csv(self.get_content(html, url))
 
-                inp = Inp().get() 
-                if inp != None:
-                    print('break')
-                    break
-                else:
-                    print('continue')
-                print('new page')
         else:
             print('Something wrong!')
 
