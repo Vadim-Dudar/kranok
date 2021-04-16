@@ -12,13 +12,12 @@ class Parce():
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
     }
+    csvfile = open('sample.csv', 'w', newline='')
 
     def __init__(self, url, params=None):
 
         self.url = url
         self.params = params
-        # self.csvfile = open('sample.csv', 'w', newline='')
-        # self.writer = csv.writer(self.csvfile)
 
     def html(self, url, params=None, headers=headers):
 
@@ -83,13 +82,11 @@ class Parce():
         content.insert(0, url)
         return content
 
-    def csv(self, data):
+    def csv(self, data, csvfile=csvfile):
 
-        with open('sample.csv', 'w') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(i for i in data)
-            writer.writerow('\n')
-            print('new card')
+        writer = csv.writer(csvfile)
+        writer.writerow(i for i in data)
+        print('new card')
 
     def parce(self):
 
