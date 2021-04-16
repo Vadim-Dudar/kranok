@@ -85,10 +85,11 @@ class Parce():
 
     def csv(self, data):
 
-        with open('sample.csv', 'w', newline='') as csvfile:
+        with open('sample.csv', 'w') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(i for i in data)
-            print('new page')
+            writer.writerow('\n')
+            print('new card')
 
     def parce(self):
 
