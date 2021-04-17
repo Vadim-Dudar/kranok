@@ -7,31 +7,23 @@ from threading import Thread
 
 
 class Parce():
-
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-    }
+  
     csvfile = open('sample.csv', 'w', newline='')
 
     def __init__(self, url, params=None):
 
         self.url = url
         self.params = params
-        # self.column = {
-        #     'url': 0,
-        #     'name': 1,
-        #     'price': 2,
-        #     'sale_price': 3,
-        #     'properties': 4,
-        #     'image': 5,
-        # }
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        }
 
-    def html(self, url, params=None, headers=headers):
+    def html(self, url, params=None):
         """
         Получение html кода странички
         """
-        r = requests.get(url, params=params, headers=headers)
+        r = requests.get(url, params=params, headers=self.headers)
         return r
 
     def get_pages_count(self, html):
@@ -115,6 +107,7 @@ class Parce():
     def parce(self):
 
         html = self.html(self.url)
+        tk = Tk()
         if html.status_code == 200:
             counter = self.get_pages_count(html.text)
 
