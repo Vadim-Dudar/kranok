@@ -18,14 +18,26 @@ class Parce():
 
         self.url = url
         self.params = params
+        # self.column = {
+        #     'url': 0,
+        #     'name': 1,
+        #     'price': 2,
+        #     'sale_price': 3,
+        #     'properties': 4,
+        #     'image': 5,
+        # }
 
     def html(self, url, params=None, headers=headers):
-
+        """
+        Получение html кода странички
+        """
         r = requests.get(url, params=params, headers=headers)
         return r
 
     def get_pages_count(self, html):
-
+        """
+        Получение количества страничек
+        """
         soup = bs(html, 'html.parser')
         pages_link = soup.find('a', class_='last').get('href')
         
@@ -39,7 +51,9 @@ class Parce():
         return int(page[::-1])
 
     def get_urls(self, html):
-
+        """
+        Получение ссылок на каждую карточку
+        """
         soup = bs(html, 'html.parser')
         content = soup.find_all('div', class_='product-main')
 
@@ -50,43 +64,53 @@ class Parce():
         return urls
 
     def get_content(self, html, url):
-
+        """
+        Получение информации с каждой странички товора
+        """
         soup = bs(html, 'html.parser')
-        content = []
 
-        for name in soup.find_all('div', class_='product-title'):
-            content.append(name.find('h1').get_text())
+        # название
+        name = ''
+        for name_1 in soup.find_all('div', class_='product-title'):
+            name = name_1.find('h1').get_text()
 
+        # цена
+        price = ''
+        sale_price = ''
         for p in soup.find_all('div', class_='pr-q'):
             if p.find('span', class_='price') != None:
-                content.append(p.find('span', class_='price').get_text().replace('\n', '').replace('\xa0', ' '))
+                price = p.find('span', class_='price').get_text().replace('\n', '').replace('\xa0', ' ')
             else:
-                bprice = p.find('div', class_='b-price').get_text().replace('\n', '').replace('\xa0', ' ')
-                aprice = p.find('div', class_='price-old').get_text().replace('\n', '').replace('\xa0', ' ')
-                content.append(f'{bprice}, {aprice}')
+                sale_price = p.find('div', class_='b-price').get_text().replace('\n', '').replace('\xa0', ' ')
+                price = p.find('div', class_='price-old').get_text().replace('\n', '').replace('\xa0', ' ')
 
-
+        # характеристики
+        properties = ''
         for i in soup.find_all('ul')[2:4]:
             for li in i.find_all('li'):
                 span = li.find_all('span')
-                content.append(f'{span[0].get_text()}: {span[1].get_text()}')
+                properties += f'{span[0].get_text()}: {span[1].get_text()}' + '\n'
 
-        imgstr = ''
+        # ссылки на картинки
+        image = ''
         for img in soup.find_all('div', class_='viewport'):
             for i in img.find_all('a'):
-                imgstr += i.get('href') + ', ' 
-            print(imgstr)
+                image = (i.get('href'))
 
-        content.append(imgstr)
-
-        content.insert(0, url)
+        content = {
+            'url': url,
+            'name': name,
+            'price': price,
+            'sale_price': sale_price,
+            'properties': properties,
+            'image': image,
+        }
         return content
 
     def csv(self, data, csvfile=csvfile):
-
-        writer = csv.writer(csvfile)
-        writer.writerow(i for i in data)
-        print('new card')
+        
+        writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=['url', 'name', 'price', 'sale_price', 'properties', 'image'])
+        writer.writerow(data)
 
     def parce(self):
 
