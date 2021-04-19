@@ -149,5 +149,5 @@ class Parce():
             print('Something wrong!')
 
     
-kranok = Parce(input('Input your url: '))
+kranok = Parce('https://kranok.ua/ua/komplekty-smesitelej')
 kranok.parce()
