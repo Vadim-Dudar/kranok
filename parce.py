@@ -5,7 +5,7 @@ import csv
 
 class Parce():
   
-    csvfile = open('sample.csv', 'w', newline='')
+    csvfile = open('sample.csv', 'w', newline='', encoding='UTF-8')
 
     def __init__(self, url, params=None):
 
