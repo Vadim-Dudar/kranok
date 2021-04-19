@@ -77,11 +77,13 @@ class Parce():
                 price = p.find('div', class_='price-old').get_text().replace('\n', '').replace('\xa0', ' ')
 
         # характеристики
-        properties = ''
+        properties = {}
         for i in soup.find_all('ul')[2:4]:
             for li in i.find_all('li'):
                 span = li.find_all('span')
-                properties += f'{span[0].get_text()}: {span[1].get_text()}' + '\n'
+                key = span[0].get_text()
+                value = span[1].get_text()
+                properties[key] = value
 
         # ссылки на картинки
         image = ''
@@ -97,32 +99,58 @@ class Parce():
             'properties': properties,
             'image': image,
         }
+
         return content
 
+    def get_fieldnames(self, data):
+
+        fieldnames = ['url', 'name', 'price', 'sale_price', 'image']
+
+        propertys = []
+        for d in data:
+            for key in d['properties']:
+                propertys.append(key)
+
+        fieldnames = fieldnames[0:4] + propertys + fieldnames[4:]
+
+        return fieldnames
+
     def csv(self, data, csvfile=csvfile):
-        
-        writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=['url', 'name', 'price', 'sale_price', 'properties', 'image'])
-        writer.writerow(data)
+
+        writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=self.get_fieldnames(data))
+
+        for d in data:
+            for key, val in d['properties'].items():
+                d.update({key: f"{key}: {val}"})
+
+            d.pop('properties')    
+
+        for d in data:
+            writer.writerow(d)
 
     def parce(self):
 
         html = self.html(self.url)
-        tk = Tk()
         if html.status_code == 200:
             counter = self.get_pages_count(html.text)
 
+            data = []
             for page in range(1, counter+1):
+
+                print(f'\rWait, {page}/{counter}')
+
                 html = self.html(self.url, params={'page': page})
                 urls = self.get_urls(html.text)
-                    
+
                 for url in urls:
-                    print(url)
                     html = self.html(url).text
-                    self.csv(self.get_content(html, url))
+                    data.append(self.get_content(html, url))
+
+            self.csv(data)
 
         else:
             print('Something wrong!')
 
     
-kranok = Parce('https://kranok.ua/ua/smesiteli-dlja-vannoj')
+kranok = Parce(input('Input your url: '))
 kranok.parce()
