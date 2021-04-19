@@ -1,9 +1,6 @@
 import requests
 from bs4 import BeautifulSoup as bs
-import sys
 import csv
-import time
-from threading import Thread
 
 
 class Parce():
