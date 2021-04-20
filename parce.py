@@ -5,7 +5,7 @@ import csv
 
 class Parce():
   
-    csvfile = open('sample.csv', 'w', newline='')
+    csvfile = open('sample.csv', 'w', newline='', encoding='UTF-8')
 
     def __init__(self, url, params=None):
 
@@ -28,16 +28,22 @@ class Parce():
         Получение количества страничек
         """
         soup = bs(html, 'html.parser')
-        pages_link = soup.find('a', class_='last').get('href')
-        
-        page = ''
-        for i in pages_link[::-1]:
-            try:
-                page += str(int(i))
-            except:
-                break
+        try:
 
-        return int(page[::-1])
+            pages_link = soup.find('a', class_='last').get('href')
+
+            page = ''
+            for i in pages_link[::-1]:
+                try:
+                    page += str(int(i))
+                except:
+                    break
+
+            return int(page[::-1])
+
+        except:
+
+            return 1
 
     def get_urls(self, html):
         """
@@ -61,38 +67,59 @@ class Parce():
         # название
         name = ''
         for name_1 in soup.find_all('div', class_='product-title'):
-            name = name_1.find('h1').get_text()
+            name = name_1.find('h1').get_text().replace(';', ' ').replace(',', ' ')
 
         # цена
         price = ''
         sale_price = ''
         for p in soup.find_all('div', class_='pr-q'):
             if p.find('span', class_='price') != None:
-                price = p.find('span', class_='price').get_text().replace('\n', '').replace('\xa0', ' ')
+                price = p.find('span', class_='price').get_text().replace('\n', '').replace('\xa0', ' ').replace(';', ' ').replace(',', ' ')
             else:
-                sale_price = p.find('div', class_='b-price').get_text().replace('\n', '').replace('\xa0', ' ')
-                price = p.find('div', class_='price-old').get_text().replace('\n', '').replace('\xa0', ' ')
+                sale_price = p.find('div', class_='b-price').get_text().replace('\n', '').replace('\xa0', ' ').replace(';', ' ').replace(',', ' ')
+                price = p.find('div', class_='price-old').get_text().replace('\n', '').replace('\xa0', ' ').replace(';', ' ').replace(',', ' ')
+
+        # артикул
+        article = ''
+        for article_1 in soup.find_all('span', class_='mpn'):
+            article = article_1.get_text()
 
         # характеристики
         properties = {}
         for i in soup.find_all('ul')[2:4]:
             for li in i.find_all('li'):
                 span = li.find_all('span')
-                key = span[0].get_text()
-                value = span[1].get_text()
+                a = li.find('a', class_='show-description')
+                key = ''
+                value = ''
+
+                try:
+                    key = a.get_text().replace(';', ' ').replace(',', ' ')
+                    value = span[2].get_text().replace(';', ' ').replace(',', ' ')
+                except:
+                    key = span[0].get_text().replace(';', ' ').replace(',', ' ')
+                    value = span[1].get_text().replace(';', ' ').replace(',', ' ')
+
                 properties[key] = value
+
+        # хлебные крошки
+        breadcrumb = ''
+        for breadcrumb_1 in soup.find_all('div', class_='breadcrumb'):
+            breadcrumb = breadcrumb_1.get_text()
 
         # ссылки на картинки
         image = ''
         for img in soup.find_all('div', class_='viewport'):
             for i in img.find_all('a'):
-                image = (i.get('href'))
+                image += i.get('href') + '^'
 
         content = {
             'url': url,
             'name': name,
             'price': price,
             'sale_price': sale_price,
+            'article': article,
+            'breadcrumb': breadcrumb,
             'properties': properties,
             'image': image,
         }
@@ -100,15 +127,18 @@ class Parce():
         return content
 
     def get_fieldnames(self, data):
+        """
+        Получаем характеристики в отдельный список
+        """
 
-        fieldnames = ['url', 'name', 'price', 'sale_price', 'image']
+        fieldnames = ['url', 'name', 'article', 'price', 'sale_price', 'breadcrumb', 'image']
 
         propertys = []
         for d in data:
             for key in d['properties']:
                 propertys.append(key)
 
-        fieldnames = fieldnames[0:4] + propertys + fieldnames[4:]
+        fieldnames = fieldnames[0:6] + list(set(propertys)) + fieldnames[6:]
 
         return fieldnames
 
@@ -149,5 +179,5 @@ class Parce():
             print('Something wrong!')
 
     
-kranok = Parce('https://kranok.ua/ua/komplekty-smesitelej')
+kranok = Parce(input('Input your url: '))
 kranok.parce()
