@@ -15,6 +15,7 @@ class Parce():
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
         }
+        self.host = 'https://www.keramis.com.ua/'
 
     def html(self, url, params=None):
         """
@@ -30,16 +31,9 @@ class Parce():
         soup = bs(html, 'html.parser')
         try:
 
-            pages_link = soup.find('a', class_='last').get('href')
+            pages_link = soup.find('span', class_='pagination_value_all').get_text()
 
-            page = ''
-            for i in pages_link[::-1]:
-                try:
-                    page += str(int(i))
-                except:
-                    break
-
-            return int(page[::-1])
+            return int(pages_link)
 
         except:
 
@@ -49,12 +43,13 @@ class Parce():
         """
         Получение ссылок на каждую карточку
         """
+
         soup = bs(html, 'html.parser')
-        content = soup.find_all('div', class_='product-main')
+        content = soup.find_all('div', class_='block_brief catalog__card')
 
         urls = []
         for cart in content:
-            urls.append(cart.find('a').get('href'))
+            urls.append(self.host + cart.find('a').get('href'))
 
         return urls
 
@@ -64,54 +59,51 @@ class Parce():
         """
         soup = bs(html, 'html.parser')
 
-        # название
+        # название+
         name = ''
-        for name_1 in soup.find_all('div', class_='product-title'):
-            name = name_1.find('h1').get_text().replace(';', ' ').replace(',', ' ')
+        for name_1 in soup.find_all('h1', class_='product_title'):
+            name = name_1.get_text().replace(';', ' ').replace(',', ' ')
 
-        # цена
+        # цена+
         price = ''
         sale_price = ''
-        for p in soup.find_all('div', class_='pr-q'):
-            if p.find('span', class_='price') != None:
-                price = p.find('span', class_='price').get_text().replace('\n', '').replace('\xa0', ' ').replace(';', ' ').replace(',', ' ')
-            else:
-                sale_price = p.find('div', class_='b-price').get_text().replace('\n', '').replace('\xa0', ' ').replace(';', ' ').replace(',', ' ')
-                price = p.find('div', class_='price-old').get_text().replace('\n', '').replace('\xa0', ' ').replace(';', ' ').replace(',', ' ')
 
-        # артикул
+        for p in soup.find_all('div', class_='purchase'):
+            price = p.find('div', class_='product_main_price').get_text()
+            if p.find('span', class_='product_old_price') != None:
+                sale_price = p.find('span', class_='product_old_price').get_text()
+            
+
+        # артикул+
         article = ''
-        for article_1 in soup.find_all('span', class_='mpn'):
+        for article_1 in soup.find_all('span', class_='code_product'):
             article = article_1.get_text()
 
-        # характеристики
+        # характеристики+
         properties = {}
-        for i in soup.find_all('ul')[2:4]:
+        for i in soup.find_all('ul', class_='specifications_list'):
             for li in i.find_all('li'):
                 span = li.find_all('span')
                 a = li.find('a', class_='show-description')
-                key = ''
-                value = ''
 
-                try:
-                    key = a.get_text().replace(';', ' ').replace(',', ' ')
-                    value = span[2].get_text().replace(';', ' ').replace(',', ' ')
-                except:
-                    key = span[0].get_text().replace(';', ' ').replace(',', ' ')
-                    value = span[1].get_text().replace(';', ' ').replace(',', ' ')
+                key = span[0].get_text().replace(';', ' ').replace(',', ' ')
+                value = span[-1].get_text().replace(';', ' ').replace(',', ' ')
 
                 properties[key] = value
 
-        # хлебные крошки
+        # хлебные крошки+
         breadcrumb = ''
-        for breadcrumb_1 in soup.find_all('div', class_='breadcrumb'):
-            breadcrumb = breadcrumb_1.get_text()
-
-        # ссылки на картинки
+        for breadcrumb_1 in soup.find_all('div', class_='breadcrumbs__list-wrapper'):
+            breadcrumb = breadcrumb_1.get_text().replace(',', '.').replace('\n', '')
+            
+        # ссылки на картинки+
         image = ''
-        for img in soup.find_all('div', class_='viewport'):
-            for i in img.find_all('a'):
-                image += i.get('href') + '^'
+        for img in soup.find_all('div', class_='sl_banner_thumbs'):
+            for i in img.find_all('img', class_='sl_banner_item'):
+                if i.get('data-src') != None:
+                    image += self.host + i.get('data-src') + '^'
+                else:
+                    image += self.host + i.get('src') + '^'
 
         content = {
             'url': url,
@@ -162,7 +154,7 @@ class Parce():
             counter = self.get_pages_count(html.text)
 
             data = []
-            for page in range(1, counter+1):
+            for page in range(1, 2):
 
                 print(f'\rWait, {page}/{counter}')
 
@@ -173,11 +165,14 @@ class Parce():
                     html = self.html(url).text
                     data.append(self.get_content(html, url))
 
+                # html = self.html(urls[0]).text
+                # data.append(self.get_content(html, urls[0]))
+
             self.csv(data)
 
         else:
             print('Something wrong!')
 
     
-kranok = Parce(input('Input your url: '))
+kranok = Parce('https://www.keramis.com.ua/category/plitka-dlja-vannoj-paradyz/')
 kranok.parce()
