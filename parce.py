@@ -86,8 +86,8 @@ class Parce():
                 span = li.find_all('span')
                 a = li.find('a', class_='show-description')
 
-                key = span[0].get_text().replace(';', ' ').replace(',', ' ')
-                value = span[-1].get_text().replace(';', ' ').replace(',', ' ')
+                key = span[0].get_text().replace(';', ' ').replace(',', '.')
+                value = span[-1].get_text().replace(';', ' ').replace(',', '.')
 
                 properties[key] = value
 
@@ -95,7 +95,7 @@ class Parce():
         breadcrumb = ''
         for breadcrumb_1 in soup.find_all('div', class_='breadcrumbs__list-wrapper'):
             breadcrumb = breadcrumb_1.get_text().replace(',', '.').replace('\n', '')
-            
+
         # ссылки на картинки+
         image = ''
         for img in soup.find_all('div', class_='sl_banner_thumbs'):
@@ -164,9 +164,6 @@ class Parce():
                 for url in urls:
                     html = self.html(url).text
                     data.append(self.get_content(html, url))
-
-                # html = self.html(urls[0]).text
-                # data.append(self.get_content(html, urls[0]))
 
             self.csv(data)
 
